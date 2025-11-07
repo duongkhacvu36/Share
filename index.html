@@ -18,17 +18,18 @@ body {
   justify-content: flex-start;
   min-height: 100vh;
   padding: 20px 10px;
-  box-sizing: border-box;
 }
 
-/* 🧱 KHUNG CHÍNH (không viền, không bóng) */
+/* 🧱 KHUNG CHÍNH — XOÁ VIỀN NGOÀI */
 .container {
   width: 100%;
   max-width: 900px;
-  background: transparent;
+  background: none;
   border: none;
   border-radius: 0;
   padding: 0;
+  box-shadow: none;
+  box-sizing: border-box;
 }
 
 /* 🏷️ TIÊU ĐỀ */
@@ -48,9 +49,6 @@ table {
   border-collapse: collapse;
   margin-top: 10px;
   font-size: 0.95rem;
-  background: #111;
-  border-radius: 10px;
-  overflow: hidden;
 }
 th, td {
   padding: 12px 8px;
@@ -181,3 +179,79 @@ async function apiList(path='') {
 
 function rawUrl(path){
   return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+}
+
+function formatBytes(b){
+  if(!b) return '-';
+  const k=1024, s=['B','KB','MB','GB'];
+  const i=Math.floor(Math.log(b)/Math.log(k));
+  return (b/Math.pow(k,i)).toFixed(2)+' '+s[i];
+}
+
+function renderList(list) {
+  const rows = list.map(f=>{
+    if(f.type==='dir'){
+      return `<tr>
+        <td>📁 <a href="#" data-dir="${f.path}" class="dir">${f.name}</a></td>
+        <td>-</td><td>Thư mục</td><td></td>
+      </tr>`;
+    } else {
+      const url = rawUrl(f.path);
+      return `<tr>
+        <td>📄 ${f.name}</td>
+        <td>${formatBytes(f.size)}</td>
+        <td>${f.type}</td>
+        <td class="action-buttons">
+          <a href="${url}" download class="action-btn">Tải</a>
+          <a href="#" class="action-btn" onclick="previewFile('${url}','${f.name}')">Xem</a>
+        </td>
+      </tr>`;
+    }
+  });
+  filesBody.innerHTML = rows.join('');
+  document.querySelectorAll('.dir').forEach(a=>a.onclick=e=>{
+    e.preventDefault();
+    loadFiles(a.dataset.dir);
+  });
+}
+
+async function loadFiles(path='') {
+  filesBody.innerHTML='<tr><td colspan="4" class="empty">Đang tải...</td></tr>';
+  try {
+    const data = await apiList(path);
+    renderList(Array.isArray(data)?data:[data]);
+  } catch(e) {
+    filesBody.innerHTML=`<tr><td colspan="4" class="empty">Lỗi: ${e.message}</td></tr>`;
+  }
+}
+
+async function previewFile(url,name){
+  const box=document.getElementById('previewBox');
+  const content=document.getElementById('previewContent');
+  box.style.display='block';
+  content.innerHTML='<i>Đang tải...</i>';
+  const ext = name.toLowerCase();
+  try {
+    if(ext.endsWith('.jpg')||ext.endsWith('.png')||ext.endsWith('.gif')){
+      content.innerHTML=`<img src="${url}" style="max-width:100%;border-radius:8px;">`;
+    } else if(ext.endsWith('.pdf')){
+      content.innerHTML=`<iframe src="${url}" width="100%" height="400px" style="border:none;"></iframe>`;
+    } else if(ext.endsWith('.txt')||ext.endsWith('.md')){
+      const text=await (await fetch(url)).text();
+      content.innerHTML=`<pre>${text.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}</pre>`;
+    } else {
+      content.innerHTML=`<p>❌ Không hỗ trợ xem trước loại này.</p>`;
+    }
+  } catch(e){
+    content.innerHTML=`<p>Lỗi: ${e.message}</p>`;
+  }
+}
+
+function closePreview(){
+  document.getElementById('previewBox').style.display='none';
+}
+
+loadFiles();
+</script>
+</body>
+</html>
