@@ -1,137 +1,114 @@
 <!doctype html>
 <html lang="vi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Trình duyệt tệp — Chia sẻ qua GitHub</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trình duyệt tệp — Kính động</title>
 
 <style>
-/* 🎨 Toàn bộ màu và hiệu ứng trong suốt */
-:root {
-  color-scheme: light dark;
-  font-family: "Inter", system-ui, sans-serif;
-  --glass-bg: rgba(255,255,255,0.15);
-  --glass-blur: blur(18px);
-  --text: #f5f5f5;
-  --accent: #4fa3ff;
-  --border: rgba(255,255,255,0.25);
-  --shadow: 0 4px 20px rgba(0,0,0,0.3);
-  background: linear-gradient(145deg, #1e1e2f, #2a2a40);
-  min-height: 100vh;
-  color: var(--text);
+/* 🌈 NỀN CHUYỂN MÀU ĐỘNG */
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background: linear-gradient(120deg, #1e1e2f, #2a2a40, #1b1b2b);
+  background-size: 300% 300%;
+  animation: gradientMove 15s ease infinite;
+  color: #f3f4f6;
+}
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-/* 🧊 Hiệu ứng khối kính */
+/* 🔮 HIỆU ỨNG KÍNH */
 .glass {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(18px);
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.15);
 }
 
-/* 🌟 Tiêu đề */
 header {
   text-align: center;
-  padding: 20px;
+  padding: 24px 10px;
 }
-h1 { margin: 0; font-size: 1.4rem; color: var(--accent); }
+h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  color: #73b7ff;
+  text-shadow: 0 0 10px rgba(100,180,255,0.7);
+}
+p { color: #d1d5db; }
 
-/* 📦 Khối nội dung chính */
 .container {
   max-width: 950px;
   margin: 0 auto;
   padding: 16px;
 }
 
-/* 🔘 Các ô nhập và nút bấm */
-input, select, button {
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.05);
-  color: var(--text);
-  font-size: 0.95rem;
-}
-button {
-  cursor: pointer;
-  background: var(--accent);
-  border: none;
-  color: white;
-  transition: 0.2s;
-}
-button:hover { opacity: 0.9; }
-
-/* 📋 Bảng danh sách file */
+/* 📜 BẢNG FILE */
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 12px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  margin-top: 10px;
 }
 th, td {
   padding: 10px;
-  border-bottom: 1px solid var(--border);
-  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
-th { background: rgba(255,255,255,0.1); }
-
+th {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(255,255,255,0.07);
+}
 a {
-  color: var(--accent);
+  color: #60a5fa;
   text-decoration: none;
 }
 a:hover { text-decoration: underline; }
-
 .empty {
   text-align: center;
   color: #ccc;
   padding: 20px;
 }
 
-/* 🔍 Thanh tìm kiếm + filter */
-.tools {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0;
+/* 🖼️ KHUNG XEM TRƯỚC */
+#previewBox {
+  margin-top: 20px;
+  display: none;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.1);
+}
+#previewContent {
+  overflow: auto;
+  max-height: 400px;
+  color: #e5e7eb;
+}
+pre {
+  background: rgba(255,255,255,0.05);
+  padding: 10px;
+  border-radius: 6px;
+  white-space: pre-wrap;
 }
 
-/* 📱 Tối ưu hiển thị cho điện thoại */
-@media (max-width: 640px) {
-  table { display: block; overflow-x: auto; }
-  th, td { white-space: nowrap; }
+/* 💫 PHÁT SÁNG NHẸ */
+table, #previewBox {
+  box-shadow: 0 0 12px rgba(80,150,255,0.15);
 }
 </style>
 </head>
 
 <body>
 <header>
-  <h1>📂 Trình duyệt tệp GitHub (Giao diện Kính)</h1>
-  <p>Duyệt và tải tệp trực tiếp từ GitHub Repository của bạn</p>
+  <h1>📂 Danh sách tệp trong Repo</h1>
+  <p>Tự động tải tệp từ GitHub (duongkhacvu36 / Share / main)</p>
 </header>
 
 <main class="container glass">
-  <!-- 🧭 Thanh cấu hình repo -->
-  <div class="tools">
-    <input id="owner" value="duongkhacvu36" placeholder="Chủ sở hữu (Owner)">
-    <input id="repo" value="Share" placeholder="Tên repo">
-    <input id="branch" value="main" placeholder="Nhánh (branch)">
-    <input id="path" placeholder="Đường dẫn (ví dụ: docs)">
-    <button id="loadBtn">Tải danh sách</button>
-  </div>
-
-  <!-- 🔎 Bộ lọc tìm kiếm -->
-  <div class="tools">
-    <input id="search" placeholder="🔍 Tìm theo tên tệp...">
-    <select id="typeFilter">
-      <option value="">Tất cả</option>
-      <option value="dir">Thư mục</option>
-      <option value="file">Tệp</option>
-    </select>
-    <button id="refresh">Làm mới</button>
-  </div>
-
-  <!-- 📜 Bảng hiển thị file -->
   <table>
     <thead>
       <tr>
@@ -139,143 +116,104 @@ a:hover { text-decoration: underline; }
       </tr>
     </thead>
     <tbody id="filesBody">
-      <tr><td colspan="4" class="empty">Nhấn “Tải danh sách” để xem tệp.</td></tr>
+      <tr><td colspan="4" class="empty">Đang tải...</td></tr>
     </tbody>
   </table>
 
-  <!-- 🖼️ Hộp xem trước file -->
-  <div id="previewBox" class="glass" style="margin-top:20px; display:none; padding:16px;">
-    <h3>👁️‍🗨️ Xem trước tệp</h3>
-    <div id="previewContent" style="overflow:auto; max-height:400px;"></div>
-    <button onclick="closePreview()">Đóng xem trước</button>
+  <!-- 🖼️ Xem trước -->
+  <div id="previewBox" class="glass">
+    <h3>👁️‍🗨️ Xem trước</h3>
+    <div id="previewContent"></div>
+    <button onclick="closePreview()">Đóng</button>
   </div>
 </main>
 
 <script>
-/* =============================
-   ⚙️ CÁC HÀM CHÍNH
-============================= */
+const filesBody = document.getElementById('filesBody');
+const owner = "duongkhacvu36";
+const repo = "Share";
+const branch = "main";
 
-// Lấy phần tử nhanh
-const el = id => document.getElementById(id);
-const filesBody = el('filesBody');
-
-// Gọi GitHub API để lấy danh sách tệp trong repo
-async function apiList(owner, repo, path, branch) {
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path?path:''}?ref=${branch}`;
+async function apiList(path='') {
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
   const r = await fetch(url);
   if (!r.ok) throw new Error(`GitHub API lỗi ${r.status}`);
   return r.json();
 }
 
-// Tạo URL raw của file để tải hoặc xem
-function rawUrl(owner, repo, branch, path) {
+function rawUrl(path){
   return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
 }
 
-// Định dạng dung lượng tệp
 function formatBytes(b){
   if(!b) return '-';
-  const k=1024, sizes=['B','KB','MB','GB'];
+  const k=1024, s=['B','KB','MB','GB'];
   const i=Math.floor(Math.log(b)/Math.log(k));
-  return (b/Math.pow(k,i)).toFixed(2)+' '+sizes[i];
+  return (b/Math.pow(k,i)).toFixed(2)+' '+s[i];
 }
 
-// Hiển thị danh sách file lên bảng
-function renderList(owner, repo, branch, list) {
-  const q = el('search').value.toLowerCase();
-  const type = el('typeFilter').value;
-
-  const rows = list.filter(f=>{
-    if(type && f.type!==type) return false;
-    if(q && !f.name.toLowerCase().includes(q)) return false;
-    return true;
-  }).map(f=>{
+function renderList(list) {
+  const rows = list.map(f=>{
     if(f.type==='dir'){
       return `<tr>
         <td>📁 <a href="#" data-dir="${f.path}" class="dir">${f.name}</a></td>
         <td>-</td><td>Thư mục</td><td></td>
       </tr>`;
     } else {
-      const url = rawUrl(owner,repo,branch,f.path);
+      const url = rawUrl(f.path);
       return `<tr>
         <td>📄 ${f.name}</td>
         <td>${formatBytes(f.size)}</td>
         <td>${f.type}</td>
-        <td>
-          <a href="${url}" target="_blank" download>Tải</a> |
-          <a href="#" onclick="previewFile('${url}','${f.name}')">Xem trước</a>
-        </td>
+        <td><a href="${url}" target="_blank" download>Tải</a> | 
+            <a href="#" onclick="previewFile('${url}','${f.name}')">Xem</a></td>
       </tr>`;
     }
   });
-
-  filesBody.innerHTML = rows.length ? rows.join('') :
-    '<tr><td colspan="4" class="empty">Không có tệp nào.</td></tr>';
-
-  // Cho phép bấm vào thư mục để mở tiếp
-  filesBody.querySelectorAll('.dir').forEach(a=>a.onclick=e=>{
+  filesBody.innerHTML = rows.join('');
+  document.querySelectorAll('.dir').forEach(a=>a.onclick=e=>{
     e.preventDefault();
-    el('path').value=a.dataset.dir;
-    loadFiles();
+    loadFiles(a.dataset.dir);
   });
 }
 
-/* =============================
-   📥 HÀM TẢI DANH SÁCH FILE
-============================= */
-async function loadFiles() {
-  const owner = el('owner').value.trim();
-  const repo = el('repo').value.trim();
-  const branch = el('branch').value.trim() || 'main';
-  const path = el('path').value.trim();
-  if(!owner||!repo) return alert('Vui lòng nhập đủ Owner và Repo');
-
+async function loadFiles(path='') {
   filesBody.innerHTML='<tr><td colspan="4" class="empty">Đang tải...</td></tr>';
   try {
-    const data = await apiList(owner,repo,path,branch);
-    const list = Array.isArray(data)?data:[data];
-    renderList(owner,repo,branch,list);
+    const data = await apiList(path);
+    renderList(Array.isArray(data)?data:[data]);
   } catch(e) {
     filesBody.innerHTML=`<tr><td colspan="4" class="empty">Lỗi: ${e.message}</td></tr>`;
   }
 }
 
-/* =============================
-   🖼️ HÀM XEM TRƯỚC FILE
-============================= */
-async function previewFile(url, name){
-  const box = el('previewBox');
-  const content = el('previewContent');
+async function previewFile(url,name){
+  const box=document.getElementById('previewBox');
+  const content=document.getElementById('previewContent');
   box.style.display='block';
-  content.innerHTML = '<i>Đang tải xem trước...</i>';
-  const lower = name.toLowerCase();
-
+  content.innerHTML='<i>Đang tải...</i>';
+  const ext = name.toLowerCase();
   try {
-    // Xử lý theo loại tệp
-    if(lower.endsWith('.jpg')||lower.endsWith('.png')||lower.endsWith('.gif')){
-      content.innerHTML = `<img src="${url}" style="max-width:100%; border-radius:8px;">`;
-    } else if(lower.endsWith('.pdf')){
-      content.innerHTML = `<iframe src="${url}" width="100%" height="400px" style="border:none;"></iframe>`;
-    } else if(lower.endsWith('.txt')||lower.endsWith('.md')){
-      const text = await (await fetch(url)).text();
-      content.innerHTML = `<pre style="white-space:pre-wrap;">${text.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}</pre>`;
+    if(ext.endsWith('.jpg')||ext.endsWith('.png')||ext.endsWith('.gif')){
+      content.innerHTML=`<img src="${url}" style="max-width:100%;border-radius:8px;">`;
+    } else if(ext.endsWith('.pdf')){
+      content.innerHTML=`<iframe src="${url}" width="100%" height="400px" style="border:none;"></iframe>`;
+    } else if(ext.endsWith('.txt')||ext.endsWith('.md')){
+      const text=await (await fetch(url)).text();
+      content.innerHTML=`<pre>${text.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}</pre>`;
     } else {
-      content.innerHTML = `<p>❌ Loại tệp này không hỗ trợ xem trước.</p>`;
+      content.innerHTML=`<p>❌ Không hỗ trợ xem trước loại này.</p>`;
     }
-  } catch(e) {
-    content.innerHTML = `<p>Lỗi khi tải tệp: ${e.message}</p>`;
+  } catch(e){
+    content.innerHTML=`<p>Lỗi: ${e.message}</p>`;
   }
 }
-function closePreview(){ el('previewBox').style.display='none'; }
 
-/* =============================
-   🔄 SỰ KIỆN GIAO DIỆN
-============================= */
-el('loadBtn').onclick = loadFiles;
-el('refresh').onclick = loadFiles;
-el('search').oninput = loadFiles;
-el('typeFilter').onchange = loadFiles;
+function closePreview(){
+  document.getElementById('previewBox').style.display='none';
+}
+
+loadFiles();
 </script>
 </body>
 </html>
