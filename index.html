@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>File Browser (GitHub Pages)</title>
+<style>
+  :root{font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;margin:0}
+  body{margin:0;background:#f6f7fb;color:#111}
+  header{background:#1f2937;color:#fff;padding:18px 20px}
+  .container{max-width:980px;margin:20px auto;padding:0 16px}
+  h1{margin:0;font-size:20px}
+  .controls{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  input,select,button{padding:8px 10px;border:1px solid #d1d5db;border-radius:6px}
+  table{width:100%;border-collapse:collapse;margin-top:16px;background:#fff;border-radius:8px;overflow:hidden}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #eef2f7;font-size:13px}
+  th{background:#f3f4f6}
+  a.download{color:#0b60ff;text-decoration:none}
+  .meta{color:#6b7280;font-size:12px}
+  .small{font-size:12px;color:#6b7280}
+  .empty{padding:30px;text-align:center;color:#6b7280}
+  .breadcrumbs{margin-top:12px;color:#374151;font-size:14px}
+  .spinner{width:20px;height:20px;border:3px solid #e5e7eb;border-top-color:#111;border-radius:50%;animation:spin .9s linear infinite;display:inline-block;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .notice{margin-top:10px;color:#6b7280;font-size:13px}
+  .search{flex:1;min-width:200px}
+  .right{margin-left:auto;display:flex;gap:8px}
+  .icon{width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px}
+</style>
+</head>
+<body>
+<header>
+  <div class="container">
+    <h1>File browser — GitHub repo → Download</h1>
+    <div class="controls">
+      <div class="small">Static GitHub Pages client to list & download repo files</div>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div style="display:flex;gap:10px;align-items:center">
+    <div style="flex:1">
+      <label class="small">Owner</label><br />
+      <input id="owner" value="your-github-username" />
+    </div>
+    <div style="flex:1">
+      <label class="small">Repo</label><br />
+      <input id="repo" value="your-repo-name" />
+    </div>
+    <div style="width:150px">
+      <label class="small">Branch</label><br />
+      <input id="branch" value="main" />
+    </div>
+    <div style="width:220px">
+      <label class="small">Path (thư mục) — để trống = root</label><br />
+      <input id="path" value="" placeholder="ví dụ: public or docs" />
+    </div>
+    <div>
+      <label class="small">&nbsp;</label><br />
+      <button id="loadBtn">Load</button>
+    </div>
+  </div>
+
+  <div class="breadcrumbs" id="breadcrumbs"></div>
+  <div class="notice" id="notice"></div>
+
+  <div style="margin-top:12px">
+    <input id="search" class="search" placeholder="Tìm theo tên file..." />
+    <div class="right">
+      <select id="typeFilter">
+        <option value="">Tất cả loại</option>
+        <option value="dir">Thư mục</option>
+        <option value="file">File</option>
+      </select>
+      <button id="refresh">Refresh</button>
+    </div>
+  </div>
+
+  <table id="filesTable" aria-live="polite">
+    <thead>
+      <tr><th>Name</th><th style="width:120px">Size</th><th style="width:180px">Modified / Type</th><th style="width:120px"></th></tr>
+    </thead>
+    <tbody id="filesBody">
+      <tr><td class="empty" colspan="4">Chưa tải — bấm Load hoặc nhập owner/repo rồi bấm Enter.</td></tr>
+    </tbody>
+  </table>
+</main>
+
+<script>
+/*
+  Single-file static client to list GitHub repo contents and provide raw download links.
+  Usage:
+   - Put this index.html in your repo (root or docs/)
+   - Edit default owner/repo/branch values or type them in UI
+   - Enable GitHub Pages for that branch
+   - Rate limits apply for unauthenticated requests (60/hr per IP). For private repo, use a token approach.
+*/
+
+const el = id => document.getElementById(id);
+const ownerInput = el('owner'), repoInput = el('repo'), branchInput = el('branch'), pathInput = el('path');
+const loadBtn = el('loadBtn'), filesBody = el('filesBody'), breadcrumbs = el('breadcrumbs');
+const notice = el('notice'), searchInput = el('search'), typeFilter = el('typeFilter'), refreshBtn = el('refresh');
+
+let currentList = [];
+let currentPath = '';
+
+async function apiList(owner, repo, path, branch) {
+  // GitHub API: /repos/{owner}/{repo}/contents/{path}?ref={branch}
+  const apiPath = path ? encodeURIComponent(path) : '';
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${apiPath}?ref=${encodeURIComponent(branch)}`;
+  const r = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' }});
+  if (!r.ok) {
+    const txt = await r.text();
+    throw new Error(`GitHub API error ${r.status}: ${txt}`);
+  }
+  return r.json(); // array for dir, object for file
+}
+
+function rawUrl(owner, repo, branch, path, name) {
+  // raw.githubusercontent.com/{owner}/{repo}/{branch}/{path?}/{name}
+  const p = path ? `${path.replace(/\\/g,'/')}/${name}` : name;
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${p}`;
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0 || bytes == null) return '-';
+  const k = 1024, sizes = ['B','KB','MB','GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+}
+
+function setLoading(msg) {
+  notice.innerHTML = msg ? `<span class="spinner"></span> ${msg}` : '';
+}
+
+async function loadAndRender(optionalPath) {
+  const owner = ownerInput.value.trim();
+  const repo = repoInput.value.trim();
+  const branch = branchInput.value.trim() || 'main';
+  const path = (optionalPath !== undefined) ? optionalPath : (pathInput.value.trim());
+  if (!owner || !repo) {
+    alert('Vui lòng điền owner và repo');
+    return;
+  }
+  currentPath = path || '';
+  setLoading('Đang tải danh sách từ GitHub API...');
+  filesBody.innerHTML = '<tr><td class="empty" colspan="4">Đang tải…</td></tr>';
+  try {
+    const data = await apiList(owner, repo, currentPath, branch);
+    // If single file returned, wrap to array
+    let items = Array.isArray(data) ? data : [data];
+    // sort: directories first, then files, alphabetical
+    items.sort((a,b) => {
+      if (a.type === b.type) return a.name.localeCompare(b.name);
+      return a.type === 'dir' ? -1 : 1;
+    });
+
+    currentList = items;
+    renderList(items);
+    renderBreadcrumbs(owner, repo, branch, currentPath);
+    setLoading('');
+  } catch (e) {
+    console.error(e);
+    filesBody.innerHTML = `<tr><td class="empty" colspan="4">Lỗi: ${e.message}</td></tr>`;
+    setLoading('');
+  }
+}
+
+function renderBreadcrumbs(owner, repo, branch, path) {
+  const parts = path ? path.split('/').filter(Boolean) : [];
+  let html = `<strong>${owner}/${repo}</strong> &nbsp; — branch <span class="small">${branch}</span> &nbsp; | &nbsp; `;
+  html += `<a href="#" data-p="" class="crumb">root</a>`;
+  let acc = '';
+  parts.forEach((p,i) => {
+    acc += (i?'/':'') + p;
+    html += ` / <a href="#" data-p="${acc}" class="crumb">${p}</a>`;
+  });
+  breadcrumbs.innerHTML = html;
+  Array.from(breadcrumbs.querySelectorAll('.crumb')).forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = a.getAttribute('data-p') || '';
+      pathInput.value = target;
+      loadAndRender(target);
+    });
+  });
+}
+
+function renderList(list) {
+  const q = (searchInput.value || '').toLowerCase();
+  const type = typeFilter.value;
+  const owner = ownerInput.value.trim(), repo = repoInput.value.trim(), branch = branchInput.value.trim() || 'main';
+  const rows = list.filter(item => {
+    if (type && item.type !== type) return false;
+    if (q && !item.name.toLowerCase().includes(q)) return false;
+    return true;
+  }).map(item => {
+    if (item.type === 'dir') {
+      return `<tr>
+        <td><span class="icon">📁</span> <a href="#" data-dir="${item.path}" class="dirlink">${item.name}</a> <div class="meta">${item.path}</div></td>
+        <td class="small">-</td>
+        <td class="small">dir</td>
+        <td><a class="download" href="#" data-dir="${item.path}">Open</a></td>
+      </tr>`;
+    } else {
+      // build raw link
+      const raw = rawUrl(owner, repo, branch, item.path.replace(/\/[^\/]+$/,''), item.name);
+      // For files in root, item.path equals filename; replace path prefix if necessary
+      const filePath = item.path;
+      const pathPrefix = filePath.includes('/') ? filePath.replace(/\/[^\/]+$/,'') : '';
+      const raw2 = rawUrl(owner, repo, branch, pathPrefix, item.name);
+      const modified = item.sha ? item.sha.slice(0,7) : '-';
+      return `<tr>
+        <td><span class="icon">📄</span> <span title="${item.path}">${item.name}</span></td>
+        <td style="text-align:right">${formatBytes(item.size)}</td>
+        <td class="small">${item.type} • ${item.path ? item.path : ''}</td>
+        <td style="text-align:center">
+          <a class="download" href="${raw2}" target="_blank" rel="noopener noreferrer" download>Download</a>
+        </td>
+      </tr>`;
+    }
+  });
+
+  filesBody.innerHTML = rows.length ? rows.join('') : '<tr><td class="empty" colspan="4">Không tìm thấy mục nào.</td></tr>';
+
+  // attach directory click handlers
+  Array.from(filesBody.querySelectorAll('.dirlink')).forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const dir = a.getAttribute('data-dir');
+      pathInput.value = dir;
+      loadAndRender(dir);
+    });
+  });
+  Array.from(filesBody.querySelectorAll('a[data-dir]')).forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const dir = a.getAttribute('data-dir');
+      pathInput.value = dir;
+      loadAndRender(dir);
+    });
+  });
+}
+
+loadBtn.addEventListener('click', () => loadAndRender());
+refreshBtn.addEventListener('click', () => loadAndRender(currentPath));
+searchInput.addEventListener('input', () => renderList(currentList));
+typeFilter.addEventListener('change', () => renderList(currentList));
+
+// allow Enter to load
+[ownerInput, repoInput, branchInput, pathInput].forEach(inp => {
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { loadAndRender(); }});
+});
+
+// If page is hosted inside the same repo, auto-fill owner/repo from GitHub Pages URL if possible
+(function tryAutoFillFromLocation() {
+  // Example pages: https://username.github.io/repo/  or https://username.github.io/
+  const host = location.hostname;
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  if (host.endsWith('github.io')) {
+    const owner = host.split('.')[0];
+    ownerInput.value = owner;
+    if (pathParts.length > 0) {
+      repoInput.value = pathParts[0];
+      // If index.html in root of repo, the pathParts[0] is repo; good default
+    }
+  }
+})();
+
+// Optionally auto-load when page opens (comment/uncomment)
+ // loadAndRender();
+
+</script>
+</body>
+</html>
