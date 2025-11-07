@@ -1,174 +1,23 @@
-<!doctype html>
-<html lang="vi">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Danh sách tệp</title>
-
-<style>
-/* 🌑 NỀN ĐEN BASIC RESPONSIVE */
-body {
-  margin: 0;
-  font-family: "Inter", sans-serif;
-  background: #0a0a0a;
-  color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  min-height: 100vh;
-  padding: 20px 10px;
-}
-
-/* 🧱 KHUNG CHÍNH — XOÁ VIỀN NGOÀI */
-.container {
-  width: 100%;
-  max-width: 900px;
-  background: none;
-  border: none;
-  border-radius: 0;
-  padding: 0;
-  box-shadow: none;
-  box-sizing: border-box;
-}
-
-/* 🏷️ TIÊU ĐỀ */
-header {
-  text-align: center;
-  margin-bottom: 16px;
-}
-h1 {
-  color: #b388ff; /* 💜 Màu tím */
-  font-size: 1.6rem;
-  margin: 0;
-}
-
-/* 📂 BẢNG FILE */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  font-size: 0.95rem;
-}
-th, td {
-  padding: 12px 8px;
-  border-bottom: 1px solid #222;
-}
-th {
-  background: #191919;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #b388ff;
-  text-align: left;
-}
-td {
-  color: #ddd;
-  word-break: break-word;
-}
-.empty {
-  text-align: center;
-  color: #777;
-  padding: 20px;
-}
-
-/* 🔘 NÚT HÀNH ĐỘNG */
-.action-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.action-btn {
-  display: inline-block;
-  padding: 6px 14px;
-  border-radius: 6px;
-  background: #222;
-  color: #b388ff;
-  text-decoration: none;
-  transition: 0.2s;
-  text-align: center;
-  flex: 1;
-  min-width: 60px;
-}
-.action-btn:hover {
-  background: #b388ff;
-  color: #111;
-}
-
-/* 🖼️ KHUNG XEM TRƯỚC */
-#previewBox {
-  margin-top: 20px;
-  display: none;
-  padding: 16px;
-  border-radius: 8px;
-  background: #111;
-  border: 1px solid #222;
-}
-#previewContent {
-  overflow: auto;
-  max-height: 400px;
-  color: #ddd;
-}
-pre {
-  background: #1a1a1a;
-  padding: 10px;
-  border-radius: 6px;
-  white-space: pre-wrap;
-}
-button {
-  background: #b388ff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  margin-top: 10px;
-  cursor: pointer;
-  color: #111;
-}
-button:hover {
-  background: #ce93d8;
-}
-
-/* 📱 RESPONSIVE */
-@media (max-width: 600px) {
-  th, td {
-    padding: 8px 6px;
-    font-size: 0.85rem;
-  }
-  h1 {
-    font-size: 1.3rem;
-  }
-}
-</style>
-</head>
-
-<body>
-<header>
-  <h1>📂 Danh sách tệp</h1>
-</header>
-
-<main class="container">
-  <table>
-    <thead>
-      <tr>
-        <th>Tên</th><th>Kích thước</th><th>Loại</th><th>Hành động</th>
-      </tr>
-    </thead>
-    <tbody id="filesBody">
-      <tr><td colspan="4" class="empty">Đang tải...</td></tr>
-    </tbody>
-  </table>
-
-  <div id="previewBox">
-    <h3>👁️‍🗨️ Xem trước</h3>
-    <div id="previewContent"></div>
-    <button onclick="closePreview()">Đóng</button>
-  </div>
-</main>
-
 <script>
 const filesBody = document.getElementById('filesBody');
-const owner = "duongkhacvu36";
-const repo = "Share";
-const branch = "main";
+let lastViewed = null; // 🧠 Ghi nhớ file được xem trước đó
+
+let owner = "", repo = "", branch = "main";
+const params = new URLSearchParams(location.search);
+if (params.has("owner")) owner = params.get("owner");
+if (params.has("repo")) repo = params.get("repo");
+if (params.has("branch")) branch = params.get("branch");
+
+if (!owner || !repo) {
+  document.body.innerHTML = `
+    <h2 style='color:#b388ff;text-align:center;margin-top:40px'>
+    ⚠️ Vui lòng truy cập với đường dẫn dạng:<br><br>
+    <code>?owner=tên_owner&repo=tên_repo</code><br><br>
+    Ví dụ:<br>
+    <a href='?owner=duongkhacvu36&repo=Share' style='color:#b388ff'>?owner=duongkhacvu36&repo=Share</a>
+    </h2>`;
+  throw new Error("Thiếu thông tin owner hoặc repo");
+}
 
 async function apiList(path='') {
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
@@ -228,19 +77,28 @@ async function loadFiles(path='') {
 async function previewFile(url,name){
   const box=document.getElementById('previewBox');
   const content=document.getElementById('previewContent');
+
+  // 🔄 Nếu ấn cùng 1 file thì đóng popup
+  if (lastViewed === url && box.style.display === 'block') {
+    closePreview();
+    return;
+  }
+
+  lastViewed = url;
   box.style.display='block';
   content.innerHTML='<i>Đang tải...</i>';
   const ext = name.toLowerCase();
+
   try {
     if(ext.endsWith('.jpg')||ext.endsWith('.png')||ext.endsWith('.gif')){
       content.innerHTML=`<img src="${url}" style="max-width:100%;border-radius:8px;">`;
     } else if(ext.endsWith('.pdf')){
       content.innerHTML=`<iframe src="${url}" width="100%" height="400px" style="border:none;"></iframe>`;
-    } else if(ext.endsWith('.txt')||ext.endsWith('.md')){
+    } else if(ext.endsWith('.txt')||ext.endsWith('.md')||ext.endsWith('.html')){
       const text=await (await fetch(url)).text();
       content.innerHTML=`<pre>${text.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}</pre>`;
     } else {
-      content.innerHTML=`<p>❌ Không hỗ trợ xem trước loại này.</p>`;
+      content.innerHTML=`<p style="color:#ff5252">❌ Không hỗ trợ xem trước loại này.</p>`;
     }
   } catch(e){
     content.innerHTML=`<p>Lỗi: ${e.message}</p>`;
@@ -253,5 +111,3 @@ function closePreview(){
 
 loadFiles();
 </script>
-</body>
-</html>
