@@ -3,31 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Trình duyệt tệp — Dark Basic</title>
+<title>Trình duyệt tệp — Giao diện tối</title>
 
 <style>
-/* 🌑 NỀN ĐEN BASIC */
+/* 🌑 NỀN ĐEN BASIC RESPONSIVE */
 body {
   margin: 0;
   font-family: "Inter", sans-serif;
-  background: #0b0b0b;
+  background: #0a0a0a;
   color: #f5f5f5;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: 100vh;
+  padding: 20px 10px;
 }
 
 /* 🧱 KHUNG CHÍNH */
 .container {
-  width: 90%;
-  max-width: 800px;
+  width: 100%;
+  max-width: 900px;
   background: #111;
   border: 1px solid #222;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 20px;
   box-shadow: 0 0 15px rgba(0,0,0,0.6);
+  box-sizing: border-box;
 }
 
 /* 🏷️ TIÊU ĐỀ */
@@ -36,13 +38,9 @@ header {
   margin-bottom: 16px;
 }
 h1 {
-  color: #4fc3f7;
+  color: #b388ff; /* 💜 Màu tím */
   font-size: 1.6rem;
   margin: 0;
-}
-p {
-  color: #aaa;
-  margin: 4px 0 0;
 }
 
 /* 📂 BẢNG FILE */
@@ -53,17 +51,19 @@ table {
   font-size: 0.95rem;
 }
 th, td {
-  padding: 10px;
+  padding: 12px 8px;
   border-bottom: 1px solid #222;
 }
 th {
   background: #191919;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #4fc3f7;
+  color: #b388ff;
+  text-align: left;
 }
 td {
   color: #ddd;
+  word-break: break-word;
 }
 .empty {
   text-align: center;
@@ -74,21 +74,23 @@ td {
 /* 🔘 NÚT HÀNH ĐỘNG */
 .action-buttons {
   display: flex;
-  gap: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .action-btn {
   display: inline-block;
   padding: 6px 14px;
   border-radius: 6px;
   background: #222;
-  color: #4fc3f7;
+  color: #b388ff;
   text-decoration: none;
   transition: 0.2s;
   text-align: center;
-  width: 60px;
+  flex: 1;
+  min-width: 60px;
 }
 .action-btn:hover {
-  background: #4fc3f7;
+  background: #b388ff;
   color: #111;
 }
 
@@ -113,7 +115,7 @@ pre {
   white-space: pre-wrap;
 }
 button {
-  background: #4fc3f7;
+  background: #b388ff;
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
@@ -122,7 +124,18 @@ button {
   color: #111;
 }
 button:hover {
-  background: #81d4fa;
+  background: #ce93d8;
+}
+
+/* 📱 RESPONSIVE */
+@media (max-width: 600px) {
+  th, td {
+    padding: 8px 6px;
+    font-size: 0.85rem;
+  }
+  h1 {
+    font-size: 1.3rem;
+  }
 }
 </style>
 </head>
@@ -130,7 +143,6 @@ button:hover {
 <body>
 <header>
   <h1>📂 Danh sách tệp trong Repo</h1>
-  <p>Tự động tải tệp từ GitHub (duongkhacvu36 / Share / main)</p>
 </header>
 
 <main class="container">
