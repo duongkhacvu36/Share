@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tệp & Thư mục</title>
+<title>Thư mục & Tệp</title>
 
 <style>
 body {
@@ -15,7 +15,7 @@ body {
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  padding: 20px 10px;
+  padding: 20px 10px 60px;
 }
 .container {
   width: 100%;
@@ -68,14 +68,22 @@ thead { display: none; }
 tr td:nth-child(2),
 tr td:last-child {
   text-align: right;
+  padding-right: 0;
 }
+
+/* ===== NÚT HÀNH ĐỘNG ===== */
 .action-buttons {
-  display: inline-flex;
-  gap: 6px;
+  display: flex;
   justify-content: flex-end;
+  gap: 6px;
+  width: 100%;
 }
+
 .action-btn {
-  padding: 6px 14px;
+  flex: 1 1 70px;           /* co giãn đều nhau */
+  max-width: 80px;          /* giữ giới hạn */
+  text-align: center;
+  padding: 6px 0;
   border-radius: 6px;
   background: #111;
   color: #b388ff;
@@ -83,6 +91,7 @@ tr td:last-child {
   border: 1px solid #222;
   transition: 0.2s;
   font-size: 0.9rem;
+  box-sizing: border-box;
 }
 .action-btn:hover {
   background: #b388ff;
@@ -152,10 +161,25 @@ tr td:last-child {
   to { opacity: 1; }
 }
 
+/* ===== CHÂN TRANG ===== */
+footer {
+  position: fixed;
+  bottom: 10px;
+  width: 100%;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #555;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+footer span {
+  color: #b388ff;
+}
+
 /* ===== MOBILE ===== */
 @media (max-width: 700px) {
   td { padding: 10px 6px; }
-  .action-btn { padding: 6px 10px; font-size: 0.85rem; }
+  .action-btn { font-size: 0.85rem; }
 }
 </style>
 </head>
@@ -184,6 +208,11 @@ tr td:last-child {
   <div id="previewContent"></div>
 </div>
 
+<!-- CHÂN TRANG -->
+<footer>
+  Cre: <span>Dương Khắc Vũ © 2025</span>
+</footer>
+
 <script>
 function getRepoInfo() {
   const host = window.location.hostname;
@@ -197,7 +226,7 @@ const { owner, repo } = getRepoInfo();
 const branch = "main";
 const foldersBody = document.getElementById("foldersBody");
 const filesBody = document.getElementById("filesBody");
-const cache = {}; // Thêm cache để tăng tốc
+const cache = {};
 
 async function apiList(path='') {
   if (cache[path]) return cache[path];
